@@ -1,0 +1,11 @@
+langchain
+python-dotenv
+flask
+flask_cors
+elevenlabs
+PyObjC
+openai
+pydantic==1.*
+bs4
+tiktoken
+openai
