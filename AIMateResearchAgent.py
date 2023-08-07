@@ -23,10 +23,9 @@ import openai
 
 
 class AIMateResearchAgent:
-    def __init__(self, openai_api_key, google_search_api_key, browserless_api_key):
+    def __init__(self, openai_api_key, google_search_api_key):
         self.openai_api_key = openai_api_key
         self.google_search_api_key = google_search_api_key
-        self.browserless_api_key = browserless_api_key
 
     # All other methods related to research agent go here.
     # For example:
@@ -36,64 +35,13 @@ class AIMateResearchAgent:
             'Content-Type': 'application/json'
         }
         response = requests.request("GET", url, headers=headers)
-        return response.text
-
-    def scrape_website(self, objective, url):
-    
-        print("Scraping website...")
-        headers = {
-            'Cache-Control': 'no-cache',
-            'Content-Type': 'application/json',
-        }
-        
-        data = {
-            "url": url
-        }
-        
-        data_json = json.dumps(data)
-        
-        post_url = f"https://chrome.browserless.io/content?token={browserless_api_key}"
-        response = requests.post(post_url, headers=headers, data=data_json)
-        
-        if response.status_code == 200:
-            soup = BeautifulSoup(response.content, "html.parser")
-            text = soup.get_text()
-            print("CONTENT:", text)
-        
-            if len(text) > 10000:
-                output = self.summary(objective, text)
-                return output
-            else:
-                return text
+        string_length = 16000
+        if len(response.text) > string_length:
+            return response.text[:string_length]
         else:
-            print(f"HTTP request failed with status code {response.status_code}")
-        
-    def summary(self, objective, content):
-        llm = ChatOpenAI(temperature=0, model="gpt-3.5-turbo-16k-0613")
-
-        text_splitter = RecursiveCharacterTextSplitter(
-            separators=["\n\n", "\n"], chunk_size=10000, chunk_overlap=500)
-        docs = text_splitter.create_documents([content])
-        map_prompt = """
-        Write a summary of the following text for {objective}:
-        "{text}"
-        SUMMARY:
-        """
-        map_prompt_template = PromptTemplate(
-            template=map_prompt, input_variables=["text", "objective"])
-
-        summary_chain = load_summarize_chain(
-            llm=llm,
-            chain_type='map_reduce',
-            map_prompt=map_prompt_template,
-            combine_prompt=map_prompt_template,
-            verbose=True
-        )
-
-        output = summary_chain.run(input_documents=docs, objective=objective)
-
-        return output
-
+            return response.text
+    
+    
     def do_research(self, human_input):
         tools = [
             Tool(
@@ -151,7 +99,66 @@ class ScrapeWebsiteTool(BaseTool):
     args_schema: Type[BaseModel] = ScrapeWebsiteInput
 
     def _run(self, objective: str, url: str):
-        return scrape_website(objective, url)
-
+        return self.scrape_website(objective, url)
+    
     def _arun(self, url: str):
         raise NotImplementedError("error here")
+
+    def summary(self, objective, content):
+        llm = ChatOpenAI(temperature=0, model="gpt-3.5-turbo-16k-0613")
+
+        text_splitter = RecursiveCharacterTextSplitter(
+            separators=["\n\n", "\n"], chunk_size=10000, chunk_overlap=500)
+        docs = text_splitter.create_documents([content])
+        map_prompt = """
+        Write a summary of the following text for {objective}:
+        "{text}"
+        SUMMARY:
+        """
+        map_prompt_template = PromptTemplate(
+            template=map_prompt, input_variables=["text", "objective"])
+
+        summary_chain = load_summarize_chain(
+            llm=llm,
+            chain_type='map_reduce',
+            map_prompt=map_prompt_template,
+            combine_prompt=map_prompt_template,
+            verbose=True
+        )
+
+        output = summary_chain.run(input_documents=docs, objective=objective)
+
+        return output
+
+    def scrape_website(self, objective, url):
+    
+        print("Scraping website...")
+        headers = {
+            'Cache-Control': 'no-cache',
+            'Content-Type': 'application/json',
+        }
+        
+        data = {
+            "url": url
+        }
+        
+        data_json = json.dumps(data)
+        
+        load_dotenv(find_dotenv())
+        browserless_api_key = os.getenv("BROWSERLESS_API_KEY")
+        post_url = f"https://chrome.browserless.io/content?token={browserless_api_key}"
+        response = requests.post(post_url, headers=headers, data=data_json)
+        
+        if response.status_code == 200:
+            soup = BeautifulSoup(response.content, "html.parser")
+            text = soup.get_text()
+            print("CONTENT:", text)
+        
+            if len(text) > 10000:
+                output = self.summary(objective, text)
+                return output
+            else:
+                return text
+        else:
+            print(f"HTTP request failed with status code {response.status_code}")
+    

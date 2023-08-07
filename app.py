@@ -20,7 +20,7 @@ set_api_key(eleven_labs_api_key)
 enable_voice = False
 
 
-research_agent = AIMateResearchAgent(openai_api_key, google_search_api_key, browserless_api_key)
+research_agent = AIMateResearchAgent(openai_api_key, google_search_api_key)
 chatbot = AIMateChatbot(enable_voice, eleven_labs_api_key)
 
 app = Flask (__name__)
@@ -32,14 +32,18 @@ def chat():
     input = request.args.get('input') 
     jsonResponse = chatbot.chat_with_ai(input)
     print(jsonResponse)
-    jsonData = json.loads(jsonResponse)
-    response = jsonData['response']
-    research_result = ""
-    if 'command' in jsonData and 'research' in jsonData['command']:
-        research_result =  research_agent.do_research(input)
-        response = response + " This is my research result: " + research_result['output']
-
-    chatbot.text_to_speech(response)
+    try:
+        jsonData = json.loads(jsonResponse)
+        response = jsonData['response']
+        research_result = ""
+        if 'command' in jsonData and 'research' in jsonData['command']:
+            research_result =  research_agent.do_research(input)
+            response = response + " This is my research result: " + research_result['output']
+        else:
+            chatbot.text_to_speech(response)
+    except json.JSONDecodeError:
+        return { 'message': 'Oops. Something went wrong. Want did you ask?'}
+    
     return { 'message': response }
 
 @app.route('/')

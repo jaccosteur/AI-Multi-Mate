@@ -31,7 +31,7 @@ from langchain.prompts import PromptTemplate
 
 
 class AIMateChatbot:
-    def __init__(self, enable_voice, eleven_labs_api_key, ):
+    def __init__(self, enable_voice, eleven_labs_api_key ):
         self.eleven_labs_api_key = eleven_labs_api_key
         self.enable_voice = enable_voice
         self.memory = ConversationBufferMemory()
@@ -84,6 +84,7 @@ class AIMateChatbot:
         self.memory
 
         jsonResponse = llm_chain.predict(human_input=human_input)
+        
         return jsonResponse
 
     def text_to_speech(self, message):
