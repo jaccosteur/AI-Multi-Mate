@@ -1,0 +1,14 @@
+[
+    {
+        "name": "Diana",
+        "description": "Good for chatting to your ai girl friend called Diana.",
+        "prompt_file": "config/diana.prompt",
+        "default": true
+    },
+    {
+        "name": "Research",
+        "description": "Good for answering questions that need deep thinking.",
+        "prompt_file": "config/research.prompt",
+        "default": false
+    }
+]

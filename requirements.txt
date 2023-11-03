@@ -9,3 +9,5 @@ pydantic==1.*
 bs4
 tiktoken
 openai
+pypdf
+chromadb

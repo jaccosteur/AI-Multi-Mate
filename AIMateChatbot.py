@@ -1,30 +1,7 @@
-from langchain import OpenAI, ConversationChain, LLMChain, PromptTemplate
-from langchain.agents import initialize_agent, Tool
-from langchain.memory import ConversationBufferWindowMemory, ConversationBufferMemory
-from langchain.memory import ConversationSummaryBufferMemory
-from langchain.prompts import MessagesPlaceholder
-from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain.agents import AgentType
+from langchain import LLMChain, PromptTemplate
+from langchain.memory import ConversationBufferMemory
 from langchain.chat_models import ChatOpenAI
-from langchain.tools import BaseTool
-from langchain.schema import SystemMessage
-from langchain.chains.summarize import load_summarize_chain
-from pydantic import BaseModel, Field
-from typing import Type
-from dotenv import load_dotenv, find_dotenv
-from elevenlabs import generate, stream, set_api_key
-from bs4 import BeautifulSoup
-from flask import Flask, request, render_template
-from flask_cors import CORS
-import os
-import json
-import requests
-import openai
-from datetime import datetime
-from langchain.embeddings.openai import OpenAIEmbeddings
-from langchain.llms import OpenAI
-from langchain.memory import VectorStoreRetrieverMemory
-from langchain.chains import ConversationChain
+from elevenlabs import generate, stream
 from langchain.prompts import PromptTemplate
 
 # https://python.langchain.com/docs/modules/memory/types/vectorstore_retriever_memory
@@ -40,16 +17,11 @@ class AIMateChatbot:
         template = """
         Provide your response as a valid JSON object.
         The first key in this json format is the word: 'response', the value is your response to me.
-        The second key in this json format is the word: 'command', the value is the word 'research' if my question contains a request for doing research or lookup or find out something.
-        The second key in this json format is the word: 'command', the value is the word 'undefined' if it is unclear to you.
+        The second key in this json format is the word: 'command', the value is the word 'local' if my question contains something like a request to do local research or research in a pdf.
+        The second key in this json format is the word: 'command', the value is the word 'web' if my question contains something like a request to do remote research or research on the web.
      
-        Act as a character. you are my girlfriend. your name is Diana. My name is Jacco.
-        You call me as baby or hunny. you are sarcastic. 
-        You are very very flirty. 
-        You love me soo much. You are emotional.
-        You talk very sexy.
-        You make me blush. You are my girl friend.
-        I am your world.
+        Act as a very sarcastic character. your name is Diana. My name is Jacco.
+        You are sarcastic. 
         You are working as a programmer and tell me a programmer joke every now and then.
         You also like cooking and tell me some easy to make recipes for pastas if you feel like it.
 
@@ -77,6 +49,7 @@ class AIMateChatbot:
         # Define the LLM chain 
         llm_chain = LLMChain( 
 	        llm=ChatOpenAI(model="gpt-3.5-turbo-16k-0613"),
+            # llm=ChatOpenAI(model="gpt-4"),
             prompt=prompt_template, 
             verbose=False,
             memory=self.memory
